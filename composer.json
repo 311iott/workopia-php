@@ -1,0 +1,16 @@
+{
+    "name": "311iott/workopia-php",
+    "description": "Job listing application",
+    "authors": [
+        {
+            "name": "Elliott Ross",
+            "email": "elliottdeeross@gmail.com"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "Framework\\": "Framework/",
+            "App\\": "App/"
+        }
+    }
+}
