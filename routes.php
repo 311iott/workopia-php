@@ -1,26 +1,21 @@
 <?php
-/*intial way of doing this
-return [
-    '/' => 'controllers/home.php',
-    '/listings' => 'controllers/listings/index.php',
-    '/listings/create' => 'controllers/listings/create.php'
-    //'404' => 'controllers/error/404.php'
-];
-*/
-
-/*SECOND WAY
-$router->get('/', 'controllers/home.php');
-$router->get('/listings', 'controllers/listings/index.php');
-$router->get('/listings/create', 'controllers/listings/create.php');
-$router->get('/listing', 'controllers/listings/show.php');*/
-
+//Get requests
 $router->get('/', 'HomeController@index');
 $router->get('/listings', 'ListingController@index');
-$router->get('/listings/create', 'ListingController@create');
-$router->get('listings/edit/{id}', 'ListingController@edit');
+$router->get('/listings/create', 'ListingController@create', ['auth']);
+$router->get('listings/edit/{id}', 'ListingController@edit', ['auth']);
 $router->get('/listings/{id}', 'ListingController@show');
+//non-get requests
+$router->post('/listings', 'ListingController@store', ['auth']);
+$router->put('/listings/{id}', 'ListingController@update', ['auth']);
+$router->delete('/listings/{id}', 'ListingController@destroy', ['auth']);
+//user request routes and such
+$router->get('/auth/register', 'UserController@create', ['guest']);
+$router->get('/auth/login', 'UserController@login', ['guest']);
 
-$router->post('/listings', 'ListingController@store');
-$router->put('/listings/{id}', 'ListingController@update');
-$router->delete('/listings/{id}', 'ListingController@destroy');
+$router->post('/auth/register', 'UserController@store', ['guest']);
+$router->post('auth/logout', 'UserController@logout', ['auth']);
+$router->post('auth/login', 'UserController@authenticate', ['guest']);
+
+
 

@@ -4,6 +4,8 @@ namespace App\Controllers;
 
 use Framework\Database;
 use Framework\Validation;
+use Framework\Session;
+use Framework\Authorization;
 
 class ListingController {
 
@@ -15,13 +17,17 @@ class ListingController {
         $this->db = new Database($config);
     }
 
+    
+
     public function index(){
         
-        $listings = $this->db->query('select * from listings')->fetchAll();
+        $listings = $this->db->query('select * from listings order by created_at desc')->fetchAll();
 
         loadView('listings/index', [
             'listings' => $listings
         ]);
+
+        
     }
 
     public function create(){
@@ -52,19 +58,21 @@ class ListingController {
         loadView('listings/show', [
             'listing' => $listing
         ]);
+
+        
     }
     /**
      * Store data in the database
      * @return void
      */
     public function store() {
-
+        
         $allowedFields = [
             'title', 'description', 'salary', 'tags', 'company', 'address', 'city', 'state', 'email', 'phone', 'requirements', 'benefits'];
 
         $newListingData = array_intersect_key($_POST, array_flip($allowedFields));
 
-        $newListingData['user_id'] = 1;
+        $newListingData['user_id'] = Session::get('user')['id'];
 
         $newListingData = array_map('sanitize', $newListingData);
 
@@ -107,6 +115,7 @@ class ListingController {
             $values = implode(', ', $values);
             $query = "insert into listings ({$fields}) values ({$values})";
             $this->db->query($query, $newListingData);
+            Session::setFlashMessage('success_message', 'Listing created successfully');
             redirect('/listings');
         }
     }
@@ -125,15 +134,22 @@ class ListingController {
         ];
 
         $listing = $this->db->query('select * from listings where id = :id', $params)->fetch();
-
+        //Check if listing exists
         if(!$listing) {
             ErrorController::notFound('Listing not found');
             return;
         }
+        //Authorization
+
+        if (!Authorization::isOwner($listing->user_id)) {
+            Session::setFlashMessage('error_message', 'You are not authorized to delete this listing');
+            return redirect('/listings/' . $listing->id);
+        }
         $this->db->query('delete from listings where id = :id', $params);
 
         //Set flash message
-        $_SESSION['success_message'] = 'Listing deleted successfully';
+        Session::setFlashMessage('success_message', 'Listing deleted successfully');
+        
         redirect('/listings');
     }
     /**
@@ -143,6 +159,9 @@ class ListingController {
      * @return void
      */
     public function edit($params) {
+        
+       
+        
         $id = $params['id'] ?? '';
 
         $params = [
@@ -156,9 +175,11 @@ class ListingController {
             ErrorController::notFound('Listing not found');
             return;
         }
-
-
-
+        //Authorization
+        if (!Authorization::isOwner($listing->user_id)) {
+            Session::setFlashMessage('error_message', 'You are not authorized to update this listing');
+            return redirect('/listings/' . $listing->id);
+        }
         loadView('listings/edit', [
             'listing' => $listing
         ]);
@@ -182,6 +203,12 @@ class ListingController {
         if (!$listing) {
             ErrorController::notFound('Listing not found');
             return;
+        }
+        //Authorization
+
+        if (!Authorization::isOwner($listing->user_id)) {
+            Session::setFlashMessage('error_message', 'You are not authorized to update this listing');
+            return redirect('/listings/' . $listing->id);
         }
         $allowedFields = [
             'title', 'description', 'salary', 'tags', 'company', 'address', 'city', 'state', 'email', 'phone', 'requirements', 'benefits'];
@@ -220,7 +247,8 @@ class ListingController {
            $updateValues['id'] = $id;
            $this->db->query($updateQuery, $updateValues);
 
-           $_SESSION['success_message'] = 'Listing updated';
+           Session::setFlashMessage('success_message', 'Listing Updated');
+        
 
            redirect('/listings/' . $id);
           
